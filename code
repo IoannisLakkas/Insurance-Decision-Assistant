@@ -1,1 +1,139 @@
+def ask_question(question, valid_responses=None):
+    """Helper function to ask a question and validate input."""
+    while True:
+        response = input(question + " ").strip().lower()
+        if valid_responses and response not in valid_responses:
+            print("Invalid response. Please choose from:", ", ".join(valid_responses))
+        else:
+            return response
+
+def ask_numeric_question(question, min_value=0, max_value=float('inf')):
+    """Helper function to ask numeric questions and validate input."""
+    while True:
+        try:
+            response = float(input(question + " "))
+            if min_value <= response <= max_value:
+                return response
+            else:
+                print(f"Please enter a value between {min_value} and {max_value}.")
+        except ValueError:
+            print("Invalid input. Please enter a numeric value.")
+
+def evaluate_user():
+    """Main function to determine if the user should self-insure or buy traditional insurance."""
+
+    print("\nWelcome to the Enhanced Insurance Decision Assistant!")
+    print("Answer the following questions to get a recommendation.\n")
+
+    # 1. Financial Stability
+    net_worth = ask_numeric_question("What is your total net worth in USD? (e.g., 50000, 1000000)")
+    annual_income = ask_numeric_question("What is your annual income in USD?")
+    emergency_fund = ask_numeric_question("How many months' worth of expenses do you have in liquid savings?", 0)
+
+    # 2. Risk Tolerance (Investment)
+    risk_tolerance = ask_question("How comfortable are you with investment risk? (low, medium, high)", ["low", "medium", "high"])
+    market_crash_reaction = ask_question("If the stock market drops 30% in one month, what would you do? (sell, hold, buy more)", ["sell", "hold", "buy more"])
+    std_dev_tolerance = ask_numeric_question("What is the maximum portfolio standard deviation you are comfortable with? (e.g., 10 for low, 20 for high)", 5, 50)
+
+    # 3. Time Horizon & Liquidity
+    investment_horizon = ask_numeric_question("How many years can you leave an investment untouched before needing to withdraw?", 0)
+    alternative_liquidity = ask_question("Do you have alternative liquidity sources like credit lines or assets to sell? (yes, no)", ["yes", "no"])
+
+    # 4. Health Risk Assessment (Catastrophic Event - Personal)
+    hscrp = ask_numeric_question("What is your hs-CRP level? (A measure of inflammation; normal <1, risk >3)", 0)
+    exercise = ask_question("Do you exercise regularly? (yes, no)", ["yes", "no"])
+    smoker = ask_question("Do you smoke? (yes, no)", ["yes", "no"])
+    bmi = ask_numeric_question("What is your BMI? (Normal: 18.5-24.9, Overweight: 25-29.9, Obese: 30+)", 10, 50)
+    family_history = ask_question("Do you have a family history of major diseases (heart disease, diabetes, cancer)? (yes, no)", ["yes", "no"])
+
+    # 5. Insurance Expense vs. Returns
+    current_insurance_spending = ask_numeric_question("How much do you spend annually on traditional insurance? (e.g., 2000, 10000)")
+    past_claims = ask_numeric_question("How much have you actually claimed in insurance payouts in the last 5 years? (e.g., 0, 5000)")
+
+    # 6. Catastrophic Risk Consideration
+    catastrophic_risk = ask_question("Are you considering self-insuring against high-cost, high-impact risks (e.g., medical emergencies, liability lawsuits)? (yes, no)", ["yes", "no"])
+
+    # Scoring logic to determine recommendation
+    score = 0
+
+    # Financial strength indicators
+    if net_worth > 500000:  # Strong net worth
+        score += 2
+    elif net_worth > 100000:
+        score += 1
+    
+    if annual_income > 100000:  # Stable high income
+        score += 1
+    
+    if emergency_fund >= 6:  # Has 6+ months of emergency savings
+        score += 2
+    elif emergency_fund >= 3:
+        score += 1
+
+    # Market risk tolerance
+    if risk_tolerance == "high":
+        score += 2
+    elif risk_tolerance == "medium":
+        score += 1
+
+    if market_crash_reaction == "buy more":
+        score += 2
+    elif market_crash_reaction == "hold":
+        score += 1
+
+    if std_dev_tolerance >= 20:  # Comfortable with high volatility
+        score += 1
+
+    # Investment horizon
+    if investment_horizon >= 10:
+        score += 2
+    elif investment_horizon >= 5:
+        score += 1
+
+    # Liquidity options
+    if alternative_liquidity == "yes":
+        score += 1
+
+    # Insurance cost-benefit analysis
+    if past_claims == 0 and current_insurance_spending > 2000:
+        score += 2  # Paying for insurance but never using it
+    elif past_claims < current_insurance_spending * 0.5:
+        score += 1  # Insurance cost outweighs benefits
+
+    # Personal Health Risk Assessment (negative weights)
+    health_risk_score = 0
+    if hscrp > 3:
+        health_risk_score -= 2
+    if bmi > 30:
+        health_risk_score -= 2
+    elif bmi > 25:
+        health_risk_score -= 1
+    if smoker == "yes":
+        health_risk_score -= 2
+    if family_history == "yes":
+        health_risk_score -= 2
+    if exercise == "no":
+        health_risk_score -= 1
+
+    # Apply health risk penalty (higher personal risk = more need for insurance)
+    score += health_risk_score
+
+    # Catastrophic risk consideration (negative weight)
+    if catastrophic_risk == "yes":
+        score -= 3  # Strong deterrent from self-insurance
+
+    # Final decision
+    print("\n--- Decision ---")
+    if score >= 6:
+        print("✅ You are a good candidate for **self-insuring via investing in the S&P 500**. Your financial stability and risk tolerance suggest that you can absorb unexpected costs and benefit from long-term market growth.")
+    elif score >= 3:
+        print("⚠️ You may benefit from **a hybrid approach**, keeping some traditional insurance while increasing your investment-based self-insurance.")
+    else:
+        print("🚨 You should stick with **traditional insurance**. Your financial situation, risk tolerance, or personal health risks suggest that insurance protection is necessary.")
+
+    print("\nThank you for using the Enhanced Insurance Decision Assistant!")
+
+# Run the assistant
+if __name__ == "__main__":
+    evaluate_user()
 
